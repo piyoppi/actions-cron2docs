@@ -1,0 +1,24 @@
+name: 'Test actions'
+description: 'Test'
+inputs:
+  language:
+    description: 'Language'
+    required: false
+    default: 'ja'
+  cron_file:
+    description: 'Crontab File'
+    required: false
+  cron_string:
+    description: 'Crontab Content'
+    required: false
+  base_dir:
+    description: 'Base dir'
+    required: false
+    default: ${{ github.workspace }}
+  output_filename:
+    description: 'Output file name'
+    required: false
+    default: ''
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
