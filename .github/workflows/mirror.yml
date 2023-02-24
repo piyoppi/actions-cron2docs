@@ -1,0 +1,31 @@
+name: Mirror from piyoppi/actions-cron2doc
+
+on: workflow_dispatch
+
+jobs:
+  clone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: mirrored
+      - run: mkdir mirrored
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: piyoppi/cron2docs
+          path: mirrored
+      - name: Copy
+        run: |
+          mv mirrored/packages/actions-cron2doc/* .
+          rm -rf mirrored
+          ls
+      - name: Push
+        shell: bash
+        run: |
+          git config --global user.email "bot@garakuta-toolbox.com"
+          git config --global user.name "piyoppi-bot"
+          git add .
+          git commit -m "mirrored"
+          git push origin mirrored
