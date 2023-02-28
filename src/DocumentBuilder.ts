@@ -1,38 +1,51 @@
-import {
-  DailyTimelineTableBuilder, 
-  MonthlyTimelineTableBuilder,
-  YearlyTimelineTableBuilder,
-  JobListTableBuilder
-} from '@piyoppi/cron2json-docs-display-table'
-import { cron2doc } from '@piyoppi/cron2json-docs-generator'
+import { buildDocumentMarkdown } from './DocumentMarkdownBuilder'
+import { FileCommentGenerator } from '@piyoppi/cron2json-comment-generator-file'
+import { Cron2JsonSimpleFilenameExtractor } from '@piyoppi/cron2json-filename-extractor-simple'
+import { PhpCommentExtractor } from '@piyoppi/cron2json-comment-extractor-php'
+import { ShellScriptCommentExtractor } from '@piyoppi/cron2json-comment-extractor-shellscript'
+import { readFileSync, writeFileSync, readdirSync } from 'fs'
+import { join as pathJoin } from 'path'
 import { Dictionary } from './languages/Dictionary'
-import { CommentExtractor } from '@piyoppi/cron2json-comment-extractor'
 
-export const buildDocument = (content: string, commentExtractor: CommentExtractor[], dictionary: Dictionary, baseDir: string | null = null) => {
-  const docs = cron2doc(content, commentExtractor, baseDir)
-  
-  const timelineDoc = [
-    {builder: new DailyTimelineTableBuilder(dictionary.dailyTimelineTable), title: dictionary.dailyTimelineTableTitle},
-    {builder: new MonthlyTimelineTableBuilder(dictionary.monthlyTimelineTable), title: dictionary.monthlyTimelineTableTitle},
-    {builder: new YearlyTimelineTableBuilder(dictionary.yearlyTimelineTable), title: dictionary.yearlyTimelineTableTitle}
-  ].map(props => ({...props, table: props.builder.build(docs)}))
-    .reduce((acc, props) => acc + `
-# ${props.title}
+type DocumentBuilderContent = {
+  type: 'filename' | 'text',
+  content: string
+}
 
-${props.table}
-`, '')
+type WhitelistRewriteConfig = {
+  from: string,
+  to: string
+}
 
-  
-  const jobListBuilder = new JobListTableBuilder(dictionary.jobListTable)
-  
-  const jobListDoc = `\n# ${dictionary.jobListTableTitle}\n` + docs.map(doc => ({doc, table: jobListBuilder.build(doc)}))
-    .reduce((acc, props) => {
-      const title = props.doc.comment.title ? `\n${props.doc.comment.title}\n` : ''
-      return acc + `
-## ${props.doc.schedule.command}
-${title}
-${props.table}
-`}, '')
+export const build = (
+  content: DocumentBuilderContent,
+  taskDirs: string[],
+  dictionary: Dictionary,
+  outputFilename: string | null,
+  relativePathBaseDir: string | null,
+  overridePathes: WhitelistRewriteConfig[]
+) => {
+  const taskFiles = taskDirs
+    .map(dir => readdirSync(dir).map(fn => pathJoin(dir, fn)))
+    .flat()
 
-  return timelineDoc + jobListDoc
+  const commentGenerator = new FileCommentGenerator(
+    [
+      new Cron2JsonSimpleFilenameExtractor(taskFiles, {baseDir: relativePathBaseDir, overridePathes})
+    ],
+    [
+      new PhpCommentExtractor(['.php']),
+      new ShellScriptCommentExtractor(['.sh'])
+    ]
+  )
+
+  const crontabText = content.type === 'filename' ? readFileSync(content.content).toString() : content.content
+
+  if (!content) throw new Error('Crontab Content is not found.')
+
+  const doc = buildDocumentMarkdown(crontabText, [commentGenerator],  dictionary)
+
+  if (outputFilename) {
+    writeFileSync(outputFilename, doc)
+  }
 }

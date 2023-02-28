@@ -11311,8 +11311,7 @@ const dictionary = {
             month: '月',
             day: '日',
             time: '時刻',
-            command: 'コマンド',
-            comment: 'コメント',
+            command: 'コマンド'
         }
     },
     jobListTableTitle: 'ジョブ一覧'
@@ -11351,8 +11350,7 @@ const en_dictionary = {
             month: 'Month',
             day: 'Day',
             time: 'Time',
-            command: 'Command',
-            comment: 'Comment',
+            command: 'Command'
         }
     },
     jobListTableTitle: 'Job list'
@@ -11360,8 +11358,6 @@ const en_dictionary = {
 
 // EXTERNAL MODULE: ../../node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(117);
-// EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(147);
 ;// CONCATENATED MODULE: ../cron2json-docs-display-table/dist/JobListTableBuilder.js
 class JobListTableBuilder {
     constructor(_textDictionary) {
@@ -11369,12 +11365,10 @@ class JobListTableBuilder {
     }
     build(doc) {
         const times = doc.schedule.fields.hour.map(hour => doc.schedule.fields.minute.map(minute => doc.schedule.fields.second.map(second => `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`))).flat().join(',');
-        const comment = doc.comment.summary || doc.comment.raw;
         return `| ${this._textDictionary.field.command} | ${doc.schedule.command} |\n` +
             `| ${this._textDictionary.field.month} | ${doc.schedule.fields.month.join(',')} |\n` +
             `| ${this._textDictionary.field.day} | ${doc.schedule.fields.dayOfMonth.join(',')} |\n` +
-            `| ${this._textDictionary.field.time} | ${times} |\n` +
-            `| ${this._textDictionary.field.comment} | ${comment} |`;
+            `| ${this._textDictionary.field.time} | ${times} |`;
     }
 }
 
@@ -11412,7 +11406,6 @@ function cron2json(cron) {
     };
     return {
         command,
-        filename: command.split(' ')[0],
         fields,
         cyclic: {
             everySecond: fields.second.length === 60,
@@ -11436,40 +11429,15 @@ function extractSchedulePattern(cron) {
     return matched[0];
 }
 
-// EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(17);
 ;// CONCATENATED MODULE: ../cron2json-docs-generator/dist/cron2doc.js
 
-
-
-const cron2doc = (cronText, extractors, baseDir = null) => {
+const cron2doc = (cronText, generators) => {
     const parsedItems = cron2jsonMultiRow(cronText);
     return parsedItems
         .map((schedule, index) => {
-        const isAbsolutePath = schedule.filename[0] === '/';
-        const filename = isAbsolutePath ? schedule.filename :
-            !isAbsolutePath && baseDir ? (0,external_path_.join)(baseDir, schedule.filename) : '';
-        if (!filename)
-            throw new Error('baseDir is not given but relative path was found.');
-        return { schedule, filename };
-    })
-        .map((params, index) => {
-        const extractor = extractors.find(extractor => extractor.extensions.find(extension => extension === (0,external_path_.extname)(params.schedule.filename)));
-        const buildResult = (comment = { raw: '' }) => ({ schedule: params.schedule, id: index, comment });
-        if (!extractor)
-            return { schedule: params.schedule, comment: { raw: '' }, id: index };
-        let content = '';
-        if (!(0,external_fs_.existsSync)(params.filename)) {
-            return buildResult({ raw: `File ${params.filename} is not found.` });
-        }
-        try {
-            content = (0,external_fs_.readFileSync)(params.filename).toString();
-        }
-        catch (e) {
-            return buildResult({ raw: `File ${params.filename} can't open.` });
-        }
-        const comment = extractor.extractDocComment(content);
-        return buildResult(comment);
+        const buildResult = (comment = { raw: '' }) => ({ schedule: schedule, id: index, comment });
+        const comment = generators.reduce((acc, generator) => acc || generator.generate(schedule.command), null);
+        return buildResult(comment || { raw: '' });
     });
 };
 
@@ -11581,11 +11549,11 @@ class YearlyTimelineTableBuilder {
 
 
 
-;// CONCATENATED MODULE: ./src/DocumentBuilder.ts
+;// CONCATENATED MODULE: ./src/DocumentMarkdownBuilder.ts
 
 
-const buildDocument = (content, commentExtractor, dictionary, baseDir = null) => {
-    const docs = cron2doc(content, commentExtractor, baseDir);
+const buildDocumentMarkdown = (content, commentGenerators, dictionary) => {
+    const docs = cron2doc(content, commentGenerators);
     const timelineDoc = [
         { builder: new DailyTimelineTableBuilder(dictionary.dailyTimelineTable), title: dictionary.dailyTimelineTableTitle },
         { builder: new MonthlyTimelineTableBuilder(dictionary.monthlyTimelineTable), title: dictionary.monthlyTimelineTableTitle },
@@ -11600,28 +11568,298 @@ ${props.table}
     const jobListDoc = `\n# ${dictionary.jobListTableTitle}\n` + docs.map(doc => ({ doc, table: jobListBuilder.build(doc) }))
         .reduce((acc, props) => {
         const title = props.doc.comment.title ? `\n${props.doc.comment.title}\n` : '';
+        const summary = props.doc.comment.summary ? `\n\`\`\`\n${props.doc.comment.summary}\n\`\`\`\n` :
+            props.doc.comment.raw ? `\n\`\`\`\n${props.doc.comment.raw}\n\`\`\`\n` : '';
         return acc + `
 ## ${props.doc.schedule.command}
-${title}
+${title}${summary}
 ${props.table}
 `;
     }, '');
     return timelineDoc + jobListDoc;
 };
 
-;// CONCATENATED MODULE: ./src/index.ts
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(147);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(17);
+;// CONCATENATED MODULE: ../cron2json-comment-generator-file/dist/index.js
 
+
+class FileCommentGenerator {
+    constructor(_filenameExtractors, _commentExtractors) {
+        this._filenameExtractors = _filenameExtractors;
+        this._commentExtractors = _commentExtractors;
+    }
+    generate(command) {
+        const filename = this.getFilename(command);
+        if (!filename)
+            return null;
+        if (!(0,external_fs_.existsSync)(filename)) {
+            return null;
+        }
+        let content = null;
+        try {
+            content = (0,external_fs_.readFileSync)(filename).toString();
+        }
+        catch (e) {
+            return null;
+        }
+        const extractor = this._commentExtractors.find(extractor => extractor.extensions.find(extension => extension === (0,external_path_.extname)(filename)));
+        if (!extractor)
+            return null;
+        const comment = extractor.extractDocComment(content);
+        return comment;
+    }
+    getFilename(command) {
+        const extractedFilename = this._filenameExtractors.reduce((acc, extractor) => acc || extractor.extract(command), null);
+        if (!extractedFilename)
+            return null;
+        return extractedFilename;
+    }
+}
+
+;// CONCATENATED MODULE: ../cron2json-filename-extractor-simple/dist/index.js
+
+class Cron2JsonSimpleFilenameExtractor {
+    constructor(_whitelist, _options = {}) {
+        var _a;
+        this._whitelist = _whitelist;
+        this._options = _options;
+        this._whitelist.forEach(item => {
+            if (item[0] !== '/')
+                throw new Error('The filename whitelist must not contain relative paths');
+        });
+        if (this._options.baseDir && this._options.baseDir.slice(-1) !== '/') {
+            this._options.baseDir += '/';
+        }
+        this._options.overridePathes = (_a = this._options.overridePathes) === null || _a === void 0 ? void 0 : _a.map(val => ({
+            from: val.from.slice(-1) !== '/' ? val.from + '/' : val.from,
+            to: val.to.slice(-1) !== '/' ? val.to + '/' : val.to
+        }));
+    }
+    extractAbsolutePath(command) {
+        return this._whitelist
+            .reduce((acc, val, arr) => {
+            var _a;
+            if (acc)
+                return acc;
+            const overridePath = (_a = this._options.overridePathes) === null || _a === void 0 ? void 0 : _a.find(path => val.indexOf(path.to) === 0);
+            const whitelistPath = overridePath ? val.replace(overridePath.to, overridePath.from) : val;
+            const matchPosition = command.indexOf(whitelistPath);
+            const extractedFilename = matchPosition >= 0 ? whitelistPath : null;
+            if (!extractedFilename)
+                return null;
+            if (overridePath) {
+                return extractedFilename.replace(overridePath.from, overridePath.to);
+            }
+            return extractedFilename;
+        }, null);
+    }
+    extractRelativePath(command) {
+        if (!this._options.baseDir)
+            return null;
+        return this._whitelist
+            .reduce((acc, val, arr) => {
+            if (!this._options.baseDir)
+                return null;
+            if (acc)
+                return acc;
+            const whitelistPath = val.replace(this._options.baseDir, '');
+            const matchPosition = command.indexOf(whitelistPath);
+            const extractedFilename = matchPosition >= 0 ? whitelistPath : null;
+            if (!extractedFilename)
+                return null;
+            const isRelativePath = extractedFilename[0] !== '/';
+            if (!isRelativePath)
+                return null;
+            return (matchPosition === 0 || command[matchPosition - 1].match(/["' ]/g)) ? (0,external_path_.join)(this._options.baseDir, extractedFilename) : null;
+        }, null);
+    }
+    extract(command) {
+        return this.extractAbsolutePath(command) || this.extractRelativePath(command);
+    }
+}
+
+;// CONCATENATED MODULE: ../cron2json-comment-extractor/dist/index.js
+const extractCommentBlock = (text, commentChar) => {
+    let hasEndOfComment = false;
+    const commentCharEscaped = commentChar.replace('/', '\/');
+    const removeCommentCharRegExp = new RegExp(`^( |　|\^t|(${commentCharEscaped}))*`, 'g');
+    return text.split(/[(\r\n)|\n]/g)
+        .map(line => line.replace(/^( |　|\^t)*/g, '').replace(/(\r\n)|\n$/g, ''))
+        .filter(line => {
+        if (hasEndOfComment ||
+            (line.length === 0))
+            return false;
+        if (line.substring(0, commentChar.length) === commentChar) {
+            return true;
+        }
+        hasEndOfComment = true;
+        return false;
+    })
+        .map(line => line.replace(removeCommentCharRegExp, ''));
+};
+
+;// CONCATENATED MODULE: ../cron2doc-comment-extractor-php/dist/index.js
+
+class PhpCommentExtractor {
+    constructor(_extensions) {
+        this._extensions = _extensions;
+    }
+    get extensions() {
+        return this._extensions;
+    }
+    extractDocComment(content) {
+        return this.extractComment(content);
+    }
+    extractHashCommentBlock(content) {
+        return extractCommentBlock(content.replace('<?php\n', ''), '#');
+    }
+    extractSlashCommentBlock(content) {
+        return extractCommentBlock(content.replace('<?php\n', ''), '//');
+    }
+    extractMultilineCommentBlock(content) {
+        let state = 'none';
+        const result = content.replace('<?php\n', '')
+            .split(/[(\r\n)|\n]/g)
+            .map(line => line.replace(/^( |　|\^t)*/g, '').replace(/(\r\n)|\n$/g, ''))
+            .filter(line => {
+            if (state === 'end')
+                return false;
+            if (state === 'none' && line.substring(0, 2) === '/*') {
+                state = 'start';
+                return false;
+            }
+            if (state === 'start') {
+                if (line.match(/\*\/.*$/g)) {
+                    state = 'end';
+                    return false;
+                }
+                return true;
+            }
+        });
+        const removeBeginningChar = result.reduce((acc, val) => val[0] === '*' ? acc + 1 : acc, 0);
+        if (removeBeginningChar >= result.length - 1) {
+            return result.map(comment => comment.replace(/^\*/g, '').replace(/^( |　|\^t)*/g, ''));
+        }
+        return result;
+    }
+    extractBlock(content) {
+        let extracted = this.extractHashCommentBlock(content);
+        if (extracted.length > 0) {
+            return extracted;
+        }
+        extracted = this.extractSlashCommentBlock(content);
+        if (extracted.length > 0) {
+            return extracted;
+        }
+        return this.extractMultilineCommentBlock(content);
+    }
+    extractComment(content) {
+        const headingComments = this.extractBlock(content);
+        const raw = headingComments.join('\n');
+        const titleIndex = headingComments.findIndex(line => line !== '');
+        const title = headingComments[titleIndex] || '';
+        const commentsAfterTitle = headingComments.slice(titleIndex + 1);
+        const beginningCommentIndex = commentsAfterTitle.findIndex(line => line !== '');
+        const comment = beginningCommentIndex >= 0 ? commentsAfterTitle.slice(beginningCommentIndex).join('\n') || '' : '';
+        if (!title) {
+            return { raw };
+        }
+        return {
+            raw,
+            title,
+            comment
+        };
+    }
+}
+
+;// CONCATENATED MODULE: ../cron2json-comment-extractor-shellscript/dist/index.js
+
+class ShellScriptCommentExtractor {
+    constructor(_extensions) {
+        this._extensions = _extensions;
+    }
+    get extensions() {
+        return this._extensions;
+    }
+    extractDocComment(content) {
+        return this.extractComment(content);
+    }
+    extractBlock(content) {
+        var _a;
+        const comment = extractCommentBlock(content, '#');
+        return ((_a = comment[0]) === null || _a === void 0 ? void 0 : _a.at(0)) === '!' ? comment.slice(1) : comment;
+    }
+    extractComment(content) {
+        const headingComments = this.extractBlock(content);
+        const raw = headingComments.join('\n');
+        const titleIndex = headingComments.findIndex(line => line !== '');
+        const title = headingComments[titleIndex] || '';
+        const commentsAfterTitle = headingComments.slice(titleIndex + 1);
+        const beginningCommentIndex = commentsAfterTitle.findIndex(line => line !== '');
+        const comment = beginningCommentIndex >= 0 ? commentsAfterTitle.slice(beginningCommentIndex).join('\n') || '' : '';
+        if (!title) {
+            return { raw };
+        }
+        return {
+            raw,
+            title,
+            comment
+        };
+    }
+}
+
+;// CONCATENATED MODULE: ./src/DocumentBuilder.ts
+
+
+
+
+
+
+
+const build = (content, taskDirs, dictionary, outputFilename, relativePathBaseDir, overridePathes) => {
+    const taskFiles = taskDirs
+        .map(dir => (0,external_fs_.readdirSync)(dir).map(fn => (0,external_path_.join)(dir, fn)))
+        .flat();
+    const commentGenerator = new FileCommentGenerator([
+        new Cron2JsonSimpleFilenameExtractor(taskFiles, { baseDir: relativePathBaseDir, overridePathes })
+    ], [
+        new PhpCommentExtractor(['.php']),
+        new ShellScriptCommentExtractor(['.sh'])
+    ]);
+    const crontabText = content.type === 'filename' ? (0,external_fs_.readFileSync)(content.content).toString() : content.content;
+    if (!content)
+        throw new Error('Crontab Content is not found.');
+    const doc = buildDocumentMarkdown(crontabText, [commentGenerator], dictionary);
+    if (outputFilename) {
+        (0,external_fs_.writeFileSync)(outputFilename, doc);
+    }
+};
+
+;// CONCATENATED MODULE: ./src/index.ts
+var _a;
 
 
 
 
 const src_dictionary = { ja: dictionary }[core.getInput('language')] || en_dictionary;
 const filename = core.getInput('cron_file');
-const baseDir = core.getInput('base_dir');
-const content = filename ? (0,external_fs_.readFileSync)(filename).toString() : core.getInput('cron_string');
-if (!content)
-    throw new Error('Crontab Content is not found.');
-const doc = buildDocument(content, [], src_dictionary, baseDir);
+const baseDir = core.getInput('relative_path_base_dir') || null;
+const taskDirs = (_a = core.getInput('task_dir')) === null || _a === void 0 ? void 0 : _a.split(',');
+const outputFilename = core.getInput('output_filename') || null;
+const rewriteWhitelistPathFrom = core.getInput('rewrite_whitelist_path_from') || null;
+const rewriteWhitelistPathTo = core.getInput('rewrite_whitelist_path_to') || null;
+const content = {
+    type: 'filename',
+    content: filename
+};
+const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo ? [{
+        from: rewriteWhitelistPathFrom,
+        to: rewriteWhitelistPathTo
+    }] : [];
+build(content, taskDirs, src_dictionary, outputFilename, baseDir, rewiteWhitelistPathes);
 
 })();
 

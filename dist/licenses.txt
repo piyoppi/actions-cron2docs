@@ -38,10 +38,25 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 @piyoppi/cron2json
 MIT
 
+@piyoppi/cron2json-comment-extractor
+MIT
+
+@piyoppi/cron2json-comment-extractor-php
+MIT
+
+@piyoppi/cron2json-comment-extractor-shellscript
+MIT
+
+@piyoppi/cron2json-comment-generator-file
+MIT
+
 @piyoppi/cron2json-docs-display-table
 MIT
 
 @piyoppi/cron2json-docs-generator
+MIT
+
+@piyoppi/cron2json-filename-extractor-simple
 MIT
 
 cron-parser

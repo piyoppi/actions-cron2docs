@@ -1,0 +1,15 @@
+MAILTO=test@example.com
+
+00 * * * * misc/hourly.sh -v
+
+00 */3 * * * misc/every-3-hours.sh -v
+
+00 01 * * * /usr/bin/midnight-batch-1.sh -m 1
+
+00 03 * * * /usr/bin/midnight-batch-3.sh -m 1
+
+0 0 1 * * /usr/bin/beginning-of-month.sh -m 1
+
+0 0 28-31 * * /var/app/src/misc/tests/batches/end-of-month.php -m 1
+
+0 0 1 1 * src/misc/tests/batches/happy-new-year.sh

@@ -33,8 +33,7 @@ export const dictionary: Dictionary = {
       month: '月',
       day: '日',
       time: '時刻',
-      command: 'コマンド',
-      comment: 'コメント',
+      command: 'コマンド'
     }
   },
   jobListTableTitle: 'ジョブ一覧'

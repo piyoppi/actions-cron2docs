@@ -1,23 +1,25 @@
 import { dictionary as ja } from './languages/ja'
 import { dictionary as en } from './languages/en'
-import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { readFileSync, writeFileSync } from 'fs'
-import { buildDocument } from './DocumentBuilder'
+import { build } from './DocumentBuilder'
 
 const dictionary = { ja }[core.getInput('language')] || en
 
 const filename = core.getInput('cron_file')
-const baseDir = core.getInput('base_dir')
+const baseDir = core.getInput('relative_path_base_dir') || null
+const taskDirs = core.getInput('task_dir')?.split(',')
+const outputFilename = core.getInput('output_filename') || null
+const rewriteWhitelistPathFrom = core.getInput('rewrite_whitelist_path_from') || null
+const rewriteWhitelistPathTo = core.getInput('rewrite_whitelist_path_to') || null
 
-const content = filename ? readFileSync(filename).toString() : core.getInput('cron_string')
-
-if (!content) throw new Error('Crontab Content is not found.')
-
-const doc = buildDocument(content, [],  dictionary, baseDir)
-
-const outputFilename = core.getInput('output_filename')
-
-if (outputFilename) {
-  writeFileSync(outputFilename, doc)
+const content = {
+  type: 'filename' as const,
+  content: filename
 }
+
+const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo ? [{
+  from: rewriteWhitelistPathFrom,
+  to: rewriteWhitelistPathTo
+}] : []
+
+build(content, taskDirs, dictionary, outputFilename, baseDir, rewiteWhitelistPathes)
