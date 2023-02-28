@@ -18,6 +18,7 @@ jobs:
           path: mirrored
       - name: Copy
         run: |
+          ls | grep -v 'mirrored' | xargs rm -rf
           mv mirrored/packages/actions-cron2doc/* .
           rm -rf mirrored
           ls
