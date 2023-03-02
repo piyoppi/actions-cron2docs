@@ -11861,7 +11861,7 @@ var _a;
 const src_dictionary = { ja: dictionary }[core.getInput('language')] || en_dictionary;
 const filename = core.getInput('cron_file');
 const baseDir = core.getInput('relative_path_base_dir') || null;
-const taskDirs = ((_a = core.getInput('task_dir')) === null || _a === void 0 ? void 0 : _a.split(',')) || [];
+const taskDirs = ((_a = core.getInput('task_dirs')) === null || _a === void 0 ? void 0 : _a.split(',')) || [];
 const outputFilename = core.getInput('output_filename') || null;
 const rewriteWhitelistPathFrom = core.getInput('rewrite_whitelist_path_from') || null;
 const rewriteWhitelistPathTo = core.getInput('rewrite_whitelist_path_to') || null;
@@ -11875,7 +11875,7 @@ const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo
     }] : [];
 console.log('taskdir');
 console.log(taskDirs);
-console.log(core.getInput('task_dir'));
+console.log(core.getInput('task_dirs'));
 build(content, taskDirs, src_dictionary, outputFilename, baseDir, rewiteWhitelistPathes);
 
 })();

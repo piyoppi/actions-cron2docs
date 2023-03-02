@@ -7,7 +7,7 @@ const dictionary = { ja }[core.getInput('language')] || en
 
 const filename = core.getInput('cron_file')
 const baseDir = core.getInput('relative_path_base_dir') || null
-const taskDirs = core.getInput('task_dir')?.split(',') || []
+const taskDirs = core.getInput('task_dirs')?.split(',') || []
 const outputFilename = core.getInput('output_filename') || null
 const rewriteWhitelistPathFrom = core.getInput('rewrite_whitelist_path_from') || null
 const rewriteWhitelistPathTo = core.getInput('rewrite_whitelist_path_to') || null
@@ -24,6 +24,6 @@ const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo
 
 console.log('taskdir')
 console.log(taskDirs)
-console.log(core.getInput('task_dir'))
+console.log(core.getInput('task_dirs'))
 
 build(content, taskDirs, dictionary, outputFilename, baseDir, rewiteWhitelistPathes)
