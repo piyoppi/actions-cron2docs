@@ -3,7 +3,7 @@ import { FileCommentGenerator } from '@piyoppi/cron2json-comment-generator-file'
 import { Cron2JsonSimpleFilenameExtractor } from '@piyoppi/cron2json-filename-extractor-simple'
 import { PhpCommentExtractor } from '@piyoppi/cron2json-comment-extractor-php'
 import { ShellScriptCommentExtractor } from '@piyoppi/cron2json-comment-extractor-shellscript'
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs'
 import { join as pathJoin } from 'path'
 import { Dictionary } from './languages/Dictionary'
 
@@ -25,6 +25,11 @@ export const build = (
   relativePathBaseDir: string | null,
   overridePathes: WhitelistRewriteConfig[]
 ) => {
+
+  taskDirs.forEach(dir => {
+    if (!existsSync(dir)) throw new Error(`No shch directory "${dir}"`)
+  })
+
   const taskFiles = taskDirs
     .map(dir => readdirSync(dir).map(fn => pathJoin(dir, fn)))
     .flat()
