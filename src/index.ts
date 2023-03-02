@@ -22,4 +22,6 @@ const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo
   to: rewriteWhitelistPathTo
 }] : []
 
+console.log(core.getInput('task_dir'))
+
 build(content, taskDirs, dictionary, outputFilename, baseDir, rewiteWhitelistPathes)
