@@ -23,6 +23,7 @@ const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo
 }] : []
 
 console.log('taskdir')
+console.log(taskDirs)
 console.log(core.getInput('task_dir'))
 
 build(content, taskDirs, dictionary, outputFilename, baseDir, rewiteWhitelistPathes)

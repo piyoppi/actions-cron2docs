@@ -11874,6 +11874,7 @@ const rewiteWhitelistPathes = rewriteWhitelistPathFrom && rewriteWhitelistPathTo
         to: rewriteWhitelistPathTo
     }] : [];
 console.log('taskdir');
+console.log(taskDirs);
 console.log(core.getInput('task_dir'));
 build(content, taskDirs, src_dictionary, outputFilename, baseDir, rewiteWhitelistPathes);
 
