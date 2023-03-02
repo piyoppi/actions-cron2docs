@@ -11623,24 +11623,34 @@ class FileCommentGenerator {
 
 class Cron2JsonSimpleFilenameExtractor {
     constructor(_whitelist, _options = {}) {
-        var _a;
+        // validate pathes
+        var _a, _b;
         this._whitelist = _whitelist;
         this._options = _options;
         this._whitelist.forEach(item => {
             if (item[0] !== '/')
                 throw new Error('The filename whitelist must not contain relative paths');
         });
+        if (this._options.baseDir && this._options.baseDir[0] !== '/')
+            throw new Error('The baseDir must not contain relative paths');
+        (_a = this._options.overridePathes) === null || _a === void 0 ? void 0 : _a.forEach(path => {
+            if (path.from[0] !== '/')
+                throw new Error('The overridePathes(from) must not contain relative paths');
+            if (path.to[0] !== '/')
+                throw new Error('The overridePathes(to) must not contain relative paths');
+        });
+        // normalize trailing slash
         if (this._options.baseDir && this._options.baseDir.slice(-1) !== '/') {
             this._options.baseDir += '/';
         }
-        this._options.overridePathes = (_a = this._options.overridePathes) === null || _a === void 0 ? void 0 : _a.map(val => ({
+        this._options.overridePathes = (_b = this._options.overridePathes) === null || _b === void 0 ? void 0 : _b.map(val => ({
             from: val.from.slice(-1) !== '/' ? val.from + '/' : val.from,
             to: val.to.slice(-1) !== '/' ? val.to + '/' : val.to
         }));
     }
     extractAbsolutePath(command) {
         return this._whitelist
-            .reduce((acc, val, arr) => {
+            .reduce((acc, val) => {
             var _a;
             if (acc)
                 return acc;
@@ -11660,7 +11670,7 @@ class Cron2JsonSimpleFilenameExtractor {
         if (!this._options.baseDir)
             return null;
         return this._whitelist
-            .reduce((acc, val, arr) => {
+            .reduce((acc, val) => {
             if (!this._options.baseDir)
                 return null;
             if (acc)
@@ -11820,6 +11830,10 @@ class ShellScriptCommentExtractor {
 
 
 const build = (content, taskDirs, dictionary, outputFilename, relativePathBaseDir, overridePathes) => {
+    taskDirs.forEach(dir => {
+        if (!(0,external_fs_.existsSync)(dir))
+            throw new Error(`No shch directory "${dir}"`);
+    });
     const taskFiles = taskDirs
         .map(dir => (0,external_fs_.readdirSync)(dir).map(fn => (0,external_path_.join)(dir, fn)))
         .flat();
@@ -11847,7 +11861,7 @@ var _a;
 const src_dictionary = { ja: dictionary }[core.getInput('language')] || en_dictionary;
 const filename = core.getInput('cron_file');
 const baseDir = core.getInput('relative_path_base_dir') || null;
-const taskDirs = (_a = core.getInput('task_dir')) === null || _a === void 0 ? void 0 : _a.split(',');
+const taskDirs = ((_a = core.getInput('task_dir')) === null || _a === void 0 ? void 0 : _a.split(',')) || [];
 const outputFilename = core.getInput('output_filename') || null;
 const rewriteWhitelistPathFrom = core.getInput('rewrite_whitelist_path_from') || null;
 const rewriteWhitelistPathTo = core.getInput('rewrite_whitelist_path_to') || null;
