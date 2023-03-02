@@ -11366,6 +11366,7 @@ class JobListTableBuilder {
     build(doc) {
         const times = doc.schedule.fields.hour.map(hour => doc.schedule.fields.minute.map(minute => doc.schedule.fields.second.map(second => `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`))).flat().join(',');
         return `| ${this._textDictionary.field.command} | ${doc.schedule.command} |\n` +
+            `| --- | --- |\n` +
             `| ${this._textDictionary.field.month} | ${doc.schedule.fields.month.join(',')} |\n` +
             `| ${this._textDictionary.field.day} | ${doc.schedule.fields.dayOfMonth.join(',')} |\n` +
             `| ${this._textDictionary.field.time} | ${times} |`;
@@ -11500,7 +11501,8 @@ class DailyTimelineTableBuilder {
         return this._buildHeader() + timeline.reduce((acc, item) => acc + '\n' + buildRow(item, ''), '');
     }
     _buildHeader() {
-        return `| ${this._textDictionary.column.time} | ${this._textDictionary.column.command} | ${this._textDictionary.column.title} |`;
+        return `| ${this._textDictionary.column.time} | ${this._textDictionary.column.command} | ${this._textDictionary.column.title} |
+| --- | --- | --- |`;
     }
 }
 
@@ -11519,7 +11521,8 @@ class MonthlyTimelineTableBuilder {
             timeline.reduce((acc, item) => acc + '\n' + buildRow(item, item.dayOfMonth.toString()), '');
     }
     _buildHeader() {
-        return `| ${this._textDictionary.column.day} | ${this._textDictionary.column.time} | ${this._textDictionary.column.command} | ${this._textDictionary.column.title} |`;
+        return `| ${this._textDictionary.column.day} | ${this._textDictionary.column.time} | ${this._textDictionary.column.command} | ${this._textDictionary.column.title} |
+| --- | --- | --- | --- |`;
     }
 }
 
@@ -11539,7 +11542,8 @@ class YearlyTimelineTableBuilder {
             timeline.reduce((acc, item) => acc + '\n' + buildRow(item, `${item.month} | ${item.dayOfMonth}`), '');
     }
     _buildHeader() {
-        return `| ${this._textDictionary.column.month} | ${this._textDictionary.column.day} | ${this._textDictionary.column.time} | ${this._textDictionary.column.command} | ${this._textDictionary.column.title} |`;
+        return `| ${this._textDictionary.column.month} | ${this._textDictionary.column.day} | ${this._textDictionary.column.time} | ${this._textDictionary.column.command} | ${this._textDictionary.column.title} |
+| --- | --- | --- | --- | --- |`;
     }
 }
 
