@@ -17,6 +17,8 @@ inputs:
     default: ${{ github.workspace }}
   task_dirs:
     description: 'Script directory(comma splitted)'
+    required: false
+    default:  ''
   output_filename:
     description: 'Output file name'
     required: false
@@ -24,9 +26,11 @@ inputs:
   rewrite_whitelist_path_from:
     description: 'Set to rewrite the white list basepath'
     required: false
+    default: ''
   rewrite_whitelist_path_to:
     description: 'Set to rewrite the white list basepath'
     required: false
+    default: ''
 runs:
   using: 'node16'
   main: 'dist/index.js'
