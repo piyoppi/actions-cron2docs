@@ -24,9 +24,17 @@ jobs:
           ls
       - name: Push
         shell: bash
+        continue-on-error: true
         run: |
           git config --global user.email "bot@garakuta-toolbox.com"
           git config --global user.name "piyoppi-bot"
           git add .
           git commit -m "mirrored"
           git push origin mirrored
+      - name: Push to main
+        shell: bash
+        run: |
+          git checkout main
+          git pull
+          git merge mirrored
+          git push origin main
