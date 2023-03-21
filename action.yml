@@ -12,7 +12,7 @@ inputs:
     description: 'Crontab Content'
     required: false
   relative_path_base_dir:
-    description: 'Base dir'
+    description: 'Base directory for relative paths'
     required: false
     default: ${{ github.workspace }}
   task_dirs:
@@ -20,7 +20,11 @@ inputs:
     required: false
     default:  ''
   output_filename:
-    description: 'Output file name'
+    description: 'File name of the output markdown'
+    required: false
+    default: ''
+  document_yaml_filename:
+    description: 'File name of the document'
     required: false
     default: ''
   rewrite_whitelist_path_from:

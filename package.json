@@ -14,6 +14,7 @@
     "@actions/github": "^5.1.1",
     "@piyoppi/cron2json-comment-extractor": "0.1.0",
     "@piyoppi/cron2json-comment-generator": "0.1.0",
+    "@piyoppi/cron2json-comment-generator-yaml": "0.1.0",
     "@piyoppi/cron2json-comment-generator-file": "0.1.0",
     "@piyoppi/cron2json-comment-extractor-shellscript": "0.1.0",
     "@piyoppi/cron2json-filename-extractor-simple": "0.1.0",

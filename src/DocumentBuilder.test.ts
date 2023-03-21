@@ -10,7 +10,8 @@ test('Should create an output markdown file', () => {
     en,
     process.cwd() + '/src/misc/tests/tmp/out.md',
     process.cwd(),
-    [{from: '/var/app/', to: process.cwd() + '/'}]
+    [{from: '/var/app/', to: process.cwd() + '/'}],
+    ''
   )
 
   expect(existsSync('src/misc/tests/tmp/out.md')).toEqual(true)
@@ -23,6 +24,7 @@ test('Should throw an error when taskDir is not found', () => {
     en,
     process.cwd() + '/src/misc/tests/tmp/out.md',
     process.cwd(),
-    [{from: '/var/app/', to: process.cwd() + '/'}]
+    [{from: '/var/app/', to: process.cwd() + '/'}],
+    ''
   )).toThrow('No shch directory "path/to/invalid"')
 })
