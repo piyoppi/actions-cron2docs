@@ -1,4 +1,4 @@
-name: 'Test actions'
+name: 'actions-cron2docs'
 description: 'Test'
 inputs:
   language:
